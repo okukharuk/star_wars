@@ -1,9 +1,13 @@
+import { ApolloClient, ApolloProvider, InMemoryCache } from '@apollo/client';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { DarkTheme, ThemeProvider } from '@react-navigation/native';
 import { useFonts } from 'expo-font';
 import { SplashScreen, Stack } from 'expo-router';
 import { useEffect } from 'react';
-import { useColorScheme } from 'react-native';
+import { Provider } from 'react-redux';
+import { PersistGate } from 'redux-persist/integration/react';
+
+import { persistor, store } from '../redux/store';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -18,9 +22,17 @@ export const unstable_settings = {
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
+const client = new ApolloClient({
+  uri: 'https://swapi-graphql.netlify.app/.netlify/functions/index',
+  cache: new InMemoryCache()
+});
+
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
+    Starjedi: require('../assets/fonts/Starjedi.ttf'),
+    Starjout: require('../assets/fonts/Starjout.ttf'),
+    Starjhol: require('../assets/fonts/Starjhol.ttf'),
+    Strjmono: require('../assets/fonts/Stjldbl1.ttf'),
     ...FontAwesome.font,
   });
 
@@ -43,14 +55,20 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme();
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-      </Stack>
-    </ThemeProvider>
+    <Provider store={store}>
+      <PersistGate loading={null} persistor={persistor}>
+        <ApolloProvider client={client}>
+          <ThemeProvider value={DarkTheme}>
+            <Stack>
+              <Stack.Screen name="(home)" options={{ headerShown: false }} />
+              <Stack.Screen name="movie" options={{ headerTitle: 'Movie' }} />
+              <Stack.Screen name="character" options={{ headerShown: false }} />
+            </Stack>
+          </ThemeProvider>
+        </ApolloProvider>
+      </PersistGate>
+    </Provider>
   );
 }
